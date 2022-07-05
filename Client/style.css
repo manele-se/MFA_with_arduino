@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --success-color: forestgreen;
+  --focus-color: rgb(255, 217, 0);
+  --button-color: rgb(183, 255, 0);
+  --error-color: rgba(238, 39, 39, 0.947);
+  --background-color: #f9f9f9;
+  --background-color-light: #ffff;
+  --text-color: #777;
+  --text-color-dark: rgb(79, 79, 79);
+  --box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  font-family: 'Open Sans', sans-serif;
+  display: flex;
+  /*all children are a flex item*/
+  align-items: center;
+  /*center horizontally and vertically*/
+  justify-content: center;
+  min-height: 100vh;
+}
+
+
+/*container around everything*/
+
+.container {
+  background-color: var(--background-color-light);
+  border-radius: 5px;
+  box-shadow: var(--box-shadow);
+  width: 40rem;
+}
+
+h2 {
+  text-align: center;
+  margin: 0 0 2rem;
+  font-size: 1.8rem;
+  color: var(--text-color-dark);
+}
+
+
+/*form*/
+
+.form {
+  padding: 3rem 4rem;
+}
+
+.form-control {
+  margin-bottom: 1rem;
+  padding-bottom: 2rem;
+  position: relative;
+}
+
+.form-control label {
+  color: var(--text-color);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-control input {
+  border: 2px solid #f0f0f0ee;
+  border-radius: .4rem;
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.4rem;
+}
+
+.form-control input:focus {
+  outline: 0;
+  border-color: var(--focus-color);
+}
+
+
+/*if successful green border*/
+
+.form-control.success input {
+  border-color: var(--success-color);
+}
+
+
+/*if the form control has a class of error, the imput will be red*/
+
+.form-control.error input {
+  border-color: var(--error-color);
+}
+
+.form-control small {
+  color: var(--error-color);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  visibility: hidden;
+}
+
+
+/*if form control has an error class*/
+
+.form-control.error small {
+  visibility: visible;
+}
+
+.form button {
+  cursor: pointer;
+  background-color: var(--button-color);
+  display: block;
+  font-size: 1.6rem;
+  border-radius: 5px;
+  border: 1px solid var(--button-color);
+  padding: 1.2rem;
+  width: 100%;
+  margin-top: 2rem;
+  ;
+}
