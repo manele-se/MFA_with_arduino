@@ -12,20 +12,22 @@
     <div class="container">
         <!--id is for js class for the style-->
         <form action="#" id="form" class="form">
-            <h2>Code sending to Arduino in</h2>
-            <h3></h3>
+            <h2 id="title">Code sending to Arduino in</h2>
+            <h3 id="timer"></h3>
+            <h4 id="extra-info">Please check your board and insert the code</h4>
        
        
         
-            <div class="form-control">
-
-                <label for="code">MFA code</label>
+            <div class="form-control" id="code-mfa">
                 <input type="code" id="code" placeholder="Enter MFA code">
                 <!--display an error message at the specific place-->
                 <small>Error</small>
             </div>
-           
-            <button type="submit">Log in</button>
+            <div id="buttons">
+                <button id="new-code-button">New code</button>
+                <button type="submit" id="verify-button">Verify </button>
+            </div>
+            
         </form>
     </div>
     <script src="script.js"></script>
