@@ -1,6 +1,11 @@
+
+#include <SoftwareSerial.h>
+
+SoftwareSerial bt(3,2); // RX, TX
+
 // the setup function runs once when you press reset or power the board
 void setup() {
-  
+  bt.begin(9600);
   pinMode(7, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(5, OUTPUT);
