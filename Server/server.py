@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 from urllib.parse import parse_qs
+from random import randrange
 
 
 hostName = "localhost"
@@ -16,6 +17,15 @@ def get_content_type(filename):
         return "text/css"
     if filename.endswith("ico"):
         return "image/x-icon"
+
+
+def send_signal():
+    code = random_number()
+    # send code to bluetooth
+
+
+def random_number():
+    return randrange(0, 15)
 
 
 class MyServer(BaseHTTPRequestHandler):
@@ -52,6 +62,7 @@ class MyServer(BaseHTTPRequestHandler):
 
                 self.http_response("./Client/MFA.html")
                 # communication with Arduino
+                send_signal(code)
                 return
         self.http_response("./Client/index.html")
 
