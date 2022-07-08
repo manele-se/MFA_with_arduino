@@ -2,10 +2,18 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 from urllib.parse import parse_qs
 from random import randrange
+import asyncio
+from bleak import BleakScanner, BleakClient
 
 
 hostName = "localhost"
 serverPort = 8080
+address="A4:06:E9:79:ED:16"
+ble= None
+
+#channel to write to 
+CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
+
 
 
 def get_content_type(filename):
@@ -18,10 +26,11 @@ def get_content_type(filename):
     if filename.endswith("ico"):
         return "image/x-icon"
 
-
-def send_signal():
+async def send_signal():
     code = random_number()
     # send code to bluetooth
+    await ble.write_gatt_char(CUSTOM_DATA_UUID, [code])
+      
 
 
 def random_number():
@@ -62,19 +71,27 @@ class MyServer(BaseHTTPRequestHandler):
 
                 self.http_response("./Client/MFA.html")
                 # communication with Arduino
-                send_signal(code)
+                #send_signal()
                 return
         self.http_response("./Client/index.html")
 
 
-if __name__ == "__main__":
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
 
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
+async def main(address):
+    async with BleakClient(address) as client:
+        ble=client
+        webServer = HTTPServer((hostName, serverPort), MyServer)
+        print("Server started http://%s:%s" % (hostName, serverPort))
 
-    webServer.server_close()
-    print("Server stopped.")
+        try:
+            webServer.serve_forever()
+        except KeyboardInterrupt:
+            pass
+
+        webServer.server_close()
+        print("Server stopped.")
+
+       
+
+asyncio.run(main(address))
+    
