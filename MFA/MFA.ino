@@ -1,5 +1,6 @@
 
 #include <SoftwareSerial.h>
+#define ID 0x5b
 
 SoftwareSerial bt(2,3); // RX, TX
 
@@ -26,10 +27,17 @@ void blink_binary(int value){
 
 // the loop function runs over and over again forever
 void loop() {
-  if (bt.available()) {
+  if (bt.available()== 3) {
+    int id = bt.read();
     int code = bt.read();
-    blink_binary(code);
-    delay(3000);
-    blink_binary(0);
+    int crc = bt.read();
+
+    if (id == ID && (ID ^ code) == crc){
+       delay(3000);
+       blink_binary(code);
+       delay(3000);
+       blink_binary(0);
+    }
+   
   }
 }

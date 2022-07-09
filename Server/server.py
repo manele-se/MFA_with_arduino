@@ -1,52 +1,64 @@
+from concurrent.futures import thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 from urllib.parse import parse_qs
 from random import randrange
 import asyncio
 from bleak import BleakScanner, BleakClient
-
+import threading
 
 hostName = "localhost"
 serverPort = 8080
 address="A4:06:E9:79:ED:16"
-ble= None
+mutex= threading.Lock()
 
 #channel to write to 
 CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 
 
-def get_content_type(filename):
-    if filename.endswith("html"):
-        return "text/html"
-    if filename.endswith("js"):
-        return "text/javascript"
-    if filename.endswith("css"):
-        return "text/css"
-    if filename.endswith("ico"):
-        return "image/x-icon"
+class BluetoothClient:
+    async def send_signal(self,ble):
+        code = self.random_number()
+        # send code to bluetooth
+        await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([code]))
 
-async def send_signal():
-    code = random_number()
-    # send code to bluetooth
-    await ble.write_gatt_char(CUSTOM_DATA_UUID, [code])
-      
+    def random_number(self):
+        return randrange(0, 15)
 
-
-def random_number():
-    return randrange(0, 15)
+    
+    async def bluetooth_main(self,address):
+        async with BleakClient(address) as client:
+            while True:
+                mutex.acquire()    
+                print("sending to ble")
+                await self.send_signal(client)
+                mutex.release()
+                print("release")
 
 
 class MyServer(BaseHTTPRequestHandler):
     def http_response(self, path):
         self.send_response(200)
-        self.send_header("Content-type", get_content_type(path))
+        self.send_header("Content-type", self.get_content_type(path))
         self.end_headers()
 
         with open(path) as f:
             lines = f.read()
 
         self.wfile.write(bytes(lines, encoding='utf8'))
+
+
+
+    def get_content_type(self, filename):
+        if filename.endswith("html"):
+            return "text/html"
+        if filename.endswith("js"):
+            return "text/javascript"
+        if filename.endswith("css"):
+            return "text/css"
+        if filename.endswith("ico"):
+            return "image/x-icon"    
 
     def do_GET(self):
         path = "./Client" + self.path
@@ -70,16 +82,17 @@ class MyServer(BaseHTTPRequestHandler):
             if line.strip() == username_and_password:
 
                 self.http_response("./Client/MFA.html")
-                # communication with Arduino
-                #send_signal()
+                mutex.release()
+                print("server release")
+                mutex.acquire()
+                print("server acquire")
                 return
         self.http_response("./Client/index.html")
 
 
-
-async def main(address):
-    async with BleakClient(address) as client:
-        ble=client
+    #create a thread for the web server
+    def web_server_main():
+        mutex.acquire()
         webServer = HTTPServer((hostName, serverPort), MyServer)
         print("Server started http://%s:%s" % (hostName, serverPort))
 
@@ -90,8 +103,11 @@ async def main(address):
 
         webServer.server_close()
         print("Server stopped.")
+        mutex.release()
 
-       
 
-asyncio.run(main(address))
+            
+threading.Thread(target=MyServer.web_server_main).start()
+bluetooth= BluetoothClient()
+asyncio.run(bluetooth.bluetooth_main(address))
     
