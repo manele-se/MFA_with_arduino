@@ -11,6 +11,8 @@ hostName = "localhost"
 serverPort = 8080
 address="A4:06:E9:79:ED:16"
 mutex= threading.Lock()
+id= 0x5b
+
 
 #channel to write to 
 CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
@@ -21,10 +23,10 @@ class BluetoothClient:
     async def send_signal(self,ble):
         code = self.random_number()
         # send code to bluetooth
-        await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([code]))
+        await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([id,code, (id ^ code)]))
 
     def random_number(self):
-        return randrange(0, 15)
+        return randrange(1, 15)
 
     
     async def bluetooth_main(self,address):
