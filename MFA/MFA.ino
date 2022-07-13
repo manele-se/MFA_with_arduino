@@ -4,7 +4,7 @@
 
 SoftwareSerial bt(2,3); // RX, TX
 
-int 
+
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -29,23 +29,35 @@ void blink_binary(int value){
 
 // the loop function runs over and over again forever
 void loop() {
-  static int bytes[3];
-  //read the bytes available and then complete the bytes array.
-  if (bt.available()) {
-    bytes[2]= bt.read(); //crc
-    bytes[1]= bt.read(); //code
-    bytes[0]= bt.read();//id 
-      
-    if (bytes[0] == ID && (ID ^ bytes[2]) == crc){
-       delay(3000);
-       blink_binary(code);
-       delay(3000);
-       blink_binary(0);
+  static int protocolData[3];
+  static byte index = 0;
+  static char done = 0;  
+  //read the bytes available and then fill in the bytes array.
+  if (bt.available() ) {
+     done= 0; 
+     char oneByte= bt.read(); 
+     protocolData[index] = oneByte;
+     index++;
+     index = index %3; //circular buffer
     }
-  }else if (bt.available()) {
-    bt.read();
 
   
-   
+    if (protocolData[index] == ID && protocolData[(index+2)%3]== (protocolData[(index+1)%3] ^ ID)){
+      if (done == 0) {
+      
+        char id = protocolData[index]; 
+        char code = protocolData[(index+1)%3];
+        delay(3000);
+        blink_binary(code);
+        delay(3000);
+        blink_binary(0);
+        done=1; 
+        //empty buffer
+        for(int i = 0; i< 3; i++){
+        protocolData[i]=0;
+       }
+        
+       
+        }
+    }
   }
-}

@@ -12,6 +12,7 @@ serverPort = 8080
 address="A4:06:E9:79:ED:16"
 mutex= threading.Lock()
 id= 0x5b
+vcode=None; 
 
 
 #channel to write to 
@@ -21,9 +22,11 @@ CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 class BluetoothClient:
     async def send_signal(self,ble):
-        code = self.random_number()
+        global vcode 
+        vcode = self.random_number()
+        print(vcode)
         # send code to bluetooth
-        await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([id,code, (id ^ code)]))
+        await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([id, vcode, (id ^ vcode)]))
 
     def random_number(self):
         return randrange(1, 15)
@@ -68,28 +71,45 @@ class MyServer(BaseHTTPRequestHandler):
             path = path + "index.html"
         self.http_response(path)
 
+
+    def log_in (self,postvars):
+        if(bytes('username', encoding='utf8')in postvars ): 
+            username = postvars[bytes('username', encoding='utf8')]
+            password = postvars[bytes('password', encoding='utf8')]
+            password = password[0].decode("utf-8")
+            username = username[0].decode("utf-8")
+            username_and_password = username + " " + password
+
+            f = open("./Database/db.txt", "r")
+            for line in f:
+                if line.strip() == username_and_password:
+
+                    self.http_response("./Client/MFA.html")
+                    mutex.release()
+                    print("server release")
+                    mutex.acquire()
+                    print("server acquire")
+                    return
+            self.http_response("./Client/index.html")
+
+
+    def check_verification_code(self, postvars):
+        if(bytes('code', encoding='utf8')in postvars ):
+            print("after if in verification")
+            code = postvars[bytes('code', encoding='utf8')]
+            code = code[0].decode("utf-8")
+            print(code)
+            print(vcode)
+            if code == str(vcode):
+                self.http_response("./Client/welcome.html")
+
+
     def do_POST(self):
         length = int(self.headers['content-length'])
         postvars = parse_qs(self.rfile.read(length),
                             keep_blank_values=1)
-
-        username = postvars[bytes('username', encoding='utf8')]
-        password = postvars[bytes('password', encoding='utf8')]
-        password = password[0].decode("utf-8")
-        username = username[0].decode("utf-8")
-        username_and_password = username + " " + password
-
-        f = open("./Database/db.txt", "r")
-        for line in f:
-            if line.strip() == username_and_password:
-
-                self.http_response("./Client/MFA.html")
-                mutex.release()
-                print("server release")
-                mutex.acquire()
-                print("server acquire")
-                return
-        self.http_response("./Client/index.html")
+        self.log_in(postvars)                    
+        self.check_verification_code( postvars)
 
 
     #create a thread for the web server
