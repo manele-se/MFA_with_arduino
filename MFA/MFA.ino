@@ -47,7 +47,7 @@ void loop() {
       
         char id = protocolData[index]; 
         char code = protocolData[(index+1)%3];
-        delay(3000);
+        delay(3500);
         blink_binary(code);
         delay(3000);
         blink_binary(0);

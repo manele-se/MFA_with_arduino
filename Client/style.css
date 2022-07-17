@@ -52,6 +52,11 @@ h4 {
   color: var(--text-color-dark);
 }
 
+h5 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  color: var(--error-color);
+}
 #timer {
   text-align: center;
   font-size: 3.5rem;

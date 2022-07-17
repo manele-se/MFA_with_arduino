@@ -41,4 +41,4 @@ function countdown(time) {
 }
 
 initiate_counter(3);
-new_code.addEventListener('click', get_new_code);
+//new_code.addEventListener('click', get_new_code);

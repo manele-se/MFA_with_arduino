@@ -72,6 +72,14 @@ class MyServer(BaseHTTPRequestHandler):
         self.http_response(path)
 
 
+    def send_new_code(self):
+        self.http_response("./Client/MFA.html")
+        mutex.release()
+        print("server release")
+        mutex.acquire()
+        print("server acquire")
+        
+
     def log_in (self,postvars):
         if(bytes('username', encoding='utf8')in postvars ): 
             username = postvars[bytes('username', encoding='utf8')]
@@ -83,18 +91,14 @@ class MyServer(BaseHTTPRequestHandler):
             f = open("./Database/db.txt", "r")
             for line in f:
                 if line.strip() == username_and_password:
-
-                    self.http_response("./Client/MFA.html")
-                    mutex.release()
-                    print("server release")
-                    mutex.acquire()
-                    print("server acquire")
+                    self.send_new_code()
                     return
+                  
             self.http_response("./Client/index.html")
 
 
     def check_verification_code(self, postvars):
-        if(bytes('code', encoding='utf8')in postvars ):
+        if bytes('code', encoding='utf8')in postvars and not bytes('new_code', encoding='utf8')in postvars:
             print("after if in verification")
             code = postvars[bytes('code', encoding='utf8')]
             code = code[0].decode("utf-8")
@@ -102,7 +106,14 @@ class MyServer(BaseHTTPRequestHandler):
             print(vcode)
             if code == str(vcode):
                 self.http_response("./Client/welcome.html")
+            else: 
+                self.http_response("./Client/MFA failed.html")
 
+
+
+    def new_code(self, postvars):
+        if bytes('new_code', encoding='utf8')in postvars:
+            self.send_new_code() 
 
     def do_POST(self):
         length = int(self.headers['content-length'])
@@ -110,6 +121,7 @@ class MyServer(BaseHTTPRequestHandler):
                             keep_blank_values=1)
         self.log_in(postvars)                    
         self.check_verification_code( postvars)
+        self.new_code(postvars)
 
 
     #create a thread for the web server
@@ -132,4 +144,8 @@ class MyServer(BaseHTTPRequestHandler):
 threading.Thread(target=MyServer.web_server_main).start()
 bluetooth= BluetoothClient()
 asyncio.run(bluetooth.bluetooth_main(address))
-    
+
+
+##TODO: if new code is press more than 2 times , log out and diplay a message "you're log out". 
+## TODO: hash the paswword. 
+## create account function 
