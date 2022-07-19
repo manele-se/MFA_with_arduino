@@ -1,5 +1,6 @@
 from concurrent.futures import thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pickle import FALSE
 import time
 from urllib.parse import parse_qs
 from random import randrange
@@ -7,12 +8,16 @@ import asyncio
 from bleak import BleakScanner, BleakClient
 import threading
 
+#Move these inside the class
 hostName = "localhost"
 serverPort = 8080
 address="A4:06:E9:79:ED:16"
 mutex= threading.Lock()
 id= 0x5b
-vcode=None; 
+vcode=None 
+is_locked = False
+pressed = 0
+
 
 
 #channel to write to 
@@ -48,10 +53,10 @@ class MyServer(BaseHTTPRequestHandler):
         self.send_header("Content-type", self.get_content_type(path))
         self.end_headers()
 
-        with open(path) as f:
-            lines = f.read()
+        with open(path, "rb") as f:
+            file_contents = f.read()
 
-        self.wfile.write(bytes(lines, encoding='utf8'))
+        self.wfile.write(file_contents)
 
 
 
@@ -66,10 +71,20 @@ class MyServer(BaseHTTPRequestHandler):
             return "image/x-icon"    
 
     def do_GET(self):
+        global is_locked
         path = "./Client" + self.path
         if path.endswith("/"):
             path = path + "index.html"
-        self.http_response(path)
+        if is_locked and path.endswith("html"): 
+            self.http_response("./Client/logged_out.html")
+        else:
+            self.http_response(path)
+
+
+    def start_timer():   
+        global is_locked
+        time.sleep(60)
+        is_locked = False 
 
 
     def send_new_code(self):
@@ -112,16 +127,28 @@ class MyServer(BaseHTTPRequestHandler):
 
 
     def new_code(self, postvars):
+        global is_locked, pressed
         if bytes('new_code', encoding='utf8')in postvars:
-            self.send_new_code() 
+            if pressed < 2: 
+               pressed= pressed+1
+               self.send_new_code() 
+            else: 
+                 self.http_response("./Client/logged_out.html")
+                 is_locked= True
+                 threading.Thread(target=MyServer.start_timer).start()
+
 
     def do_POST(self):
-        length = int(self.headers['content-length'])
-        postvars = parse_qs(self.rfile.read(length),
-                            keep_blank_values=1)
-        self.log_in(postvars)                    
-        self.check_verification_code( postvars)
-        self.new_code(postvars)
+        global is_locked
+        if not is_locked: 
+            length = int(self.headers['content-length'])
+            postvars = parse_qs(self.rfile.read(length),
+                                keep_blank_values=1)
+            self.log_in(postvars)                    
+            self.check_verification_code( postvars)
+            self.new_code(postvars)
+        else:
+            self.http_response("./Client/logged_out.html")
 
 
     #create a thread for the web server
@@ -148,4 +175,9 @@ asyncio.run(bluetooth.bluetooth_main(address))
 
 ##TODO: if new code is press more than 2 times , log out and diplay a message "you're log out". 
 ## TODO: hash the paswword. 
-## create account function 
+## TODO: write fuzz test 
+
+## Limitation in user name and password: user name must be at least 4 characters and possword be 8 characters and contain at least 3 numbers.
+## Code från arduino now is 4 bits but the idea is to attack a screen which shows a code , think how this can be made more general. 
+## the test should include a brute force against the code. 
+

@@ -45,6 +45,10 @@ h2 {
   color: var(--text-color-dark);
 }
 
+h2.logged_out{
+  color: var(--error-color);
+}
+
 h4 {
   text-align: center;
   margin: 0 0 2rem;
