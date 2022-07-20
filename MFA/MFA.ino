@@ -1,11 +1,16 @@
 
 #include <SoftwareSerial.h>
 #define ID 0x5b
+#define packetReceived  (protocolData[index] == ID && protocolData[(index+2)%3]== (protocolData[(index+1)%3] ^ ID))
 
 SoftwareSerial bt(2,3); // RX, TX
 
 
+ static int protocolData[3];
+ static byte index = 0;
+ static char done = 0;
 
+ 
 // the setup function runs once when you press reset or power the board
 void setup() {
   bt.begin(9600);
@@ -27,36 +32,44 @@ void blink_binary(int value){
   }
 }
 
-// the loop function runs over and over again forever
-void loop() {
-  static int protocolData[3];
-  static byte index = 0;
-  static char done = 0;  
-  //read the bytes available and then fill in the bytes array.
+void readOneByte(){
+
   if (bt.available() ) {
      done= 0; 
      char oneByte= bt.read(); 
      protocolData[index] = oneByte;
      index++;
-     index = index %3; //circular buffer
-    }
+     index = index %3; //circular buffer, avoiding buffer overflow
+  }
+}
 
-  
-    if (protocolData[index] == ID && protocolData[(index+2)%3]== (protocolData[(index+1)%3] ^ ID)){
+
+// the loop function runs over and over again forever
+void loop() {
+  //read the bytes available and then fill in the bytes array.
+  readOneByte(); 
+  if (packetReceived){
       if (done == 0) {
-      
         char id = protocolData[index]; 
         char code = protocolData[(index+1)%3];
-        delay(3500);
-        blink_binary(code);
-        delay(3000);
-        blink_binary(0);
-        done=1; 
-        //empty buffer
+         //empty buffer
         for(int i = 0; i< 3; i++){
         protocolData[i]=0;
        }
         
+        delay(3500);
+        blink_binary(code);
+        int newCode = false; 
+      
+        while(!newCode){
+          readOneByte();
+          if (packetReceived)
+           newCode= true; 
+        }
+        
+        blink_binary(0);
+      
+       
        
         }
     }

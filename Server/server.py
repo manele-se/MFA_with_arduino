@@ -7,6 +7,7 @@ from random import randrange
 import asyncio
 from bleak import BleakScanner, BleakClient
 import threading
+from hashlib import sha256
 
 #Move these inside the class
 hostName = "localhost"
@@ -99,9 +100,10 @@ class MyServer(BaseHTTPRequestHandler):
         if(bytes('username', encoding='utf8')in postvars ): 
             username = postvars[bytes('username', encoding='utf8')]
             password = postvars[bytes('password', encoding='utf8')]
-            password = password[0].decode("utf-8")
+            password = password[0]
             username = username[0].decode("utf-8")
-            username_and_password = username + " " + password
+            hash = sha256(password).hexdigest()
+            username_and_password = username + " " + hash
 
             f = open("./Database/db.txt", "r")
             for line in f:
@@ -173,11 +175,11 @@ bluetooth= BluetoothClient()
 asyncio.run(bluetooth.bluetooth_main(address))
 
 
-##TODO: if new code is press more than 2 times , log out and diplay a message "you're log out". 
-## TODO: hash the paswword. 
+## TODO: send signal when verifyed to stop blicking 
+## Check timing 
 ## TODO: write fuzz test 
 
-## Limitation in user name and password: user name must be at least 4 characters and possword be 8 characters and contain at least 3 numbers.
+
 ## Code från arduino now is 4 bits but the idea is to attack a screen which shows a code , think how this can be made more general. 
 ## the test should include a brute force against the code. 
 
