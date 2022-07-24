@@ -13,9 +13,10 @@ from hashlib import sha256
 hostName = "localhost"
 serverPort = 8080
 address="A4:06:E9:79:ED:16"
-mutex= threading.Lock()
+mutex= threading.Semaphore(0)
 id= 0x5b
 vcode=None 
+stop=True
 is_locked = False
 pressed = 0
 
@@ -28,10 +29,14 @@ CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 class BluetoothClient:
     async def send_signal(self,ble):
-        global vcode 
-        vcode = self.random_number()
-        print(vcode)
+        global vcode, stop
+        print("send signal")
+        if stop:
+            vcode=0
+        else:
+            vcode = self.random_number()
         # send code to bluetooth
+        print(vcode)
         await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([id, vcode, (id ^ vcode)]))
 
     def random_number(self):
@@ -41,11 +46,11 @@ class BluetoothClient:
     async def bluetooth_main(self,address):
         async with BleakClient(address) as client:
             while True:
-                mutex.acquire()    
-                print("sending to ble")
+                print("före acquire i bloothoth main")
+                mutex.acquire()
+                print("efter acquire i bloothooth main")
                 await self.send_signal(client)
-                mutex.release()
-                print("release")
+              
 
 
 class MyServer(BaseHTTPRequestHandler):
@@ -88,13 +93,12 @@ class MyServer(BaseHTTPRequestHandler):
         is_locked = False 
 
 
-    def send_new_code(self):
+    def send_mfa_code(self):
+        global stop
         self.http_response("./Client/MFA.html")
+        stop=False
         mutex.release()
-        print("server release")
-        mutex.acquire()
-        print("server acquire")
-        
+      
 
     def log_in (self,postvars):
         if(bytes('username', encoding='utf8')in postvars ): 
@@ -108,21 +112,24 @@ class MyServer(BaseHTTPRequestHandler):
             f = open("./Database/db.txt", "r")
             for line in f:
                 if line.strip() == username_and_password:
-                    self.send_new_code()
+                    self.send_mfa_code()
                     return
                   
             self.http_response("./Client/index.html")
 
 
     def check_verification_code(self, postvars):
+        global stop
         if bytes('code', encoding='utf8')in postvars and not bytes('new_code', encoding='utf8')in postvars:
-            print("after if in verification")
+            print( stop)
             code = postvars[bytes('code', encoding='utf8')]
             code = code[0].decode("utf-8")
-            print(code)
-            print(vcode)
             if code == str(vcode):
                 self.http_response("./Client/welcome.html")
+                #stop blinking
+                stop= True
+                mutex.release()
+
             else: 
                 self.http_response("./Client/MFA failed.html")
 
@@ -133,7 +140,7 @@ class MyServer(BaseHTTPRequestHandler):
         if bytes('new_code', encoding='utf8')in postvars:
             if pressed < 2: 
                pressed= pressed+1
-               self.send_new_code() 
+               self.send_mfa_code() 
             else: 
                  self.http_response("./Client/logged_out.html")
                  is_locked= True
@@ -155,7 +162,6 @@ class MyServer(BaseHTTPRequestHandler):
 
     #create a thread for the web server
     def web_server_main():
-        mutex.acquire()
         webServer = HTTPServer((hostName, serverPort), MyServer)
         print("Server started http://%s:%s" % (hostName, serverPort))
 

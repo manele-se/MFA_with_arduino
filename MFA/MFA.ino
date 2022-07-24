@@ -57,17 +57,17 @@ void loop() {
         protocolData[i]=0;
        }
         
-        delay(3500);
+        //delay(3500);
         blink_binary(code);
         int newCode = false; 
       
-        while(!newCode){
+       /* while(!newCode){
           readOneByte();
           if (packetReceived)
            newCode= true; 
-        }
+        }^*/
         
-        blink_binary(0);
+ 
       
        
        
