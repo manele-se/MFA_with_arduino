@@ -5,7 +5,7 @@ import time
 from urllib.parse import parse_qs
 from random import randrange
 import asyncio
-from bleak import BleakScanner, BleakClient
+from bleak import BleakClient
 import threading
 from hashlib import sha256
 
