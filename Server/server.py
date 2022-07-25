@@ -1,6 +1,5 @@
-from concurrent.futures import thread
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from pickle import FALSE
 import time
 from urllib.parse import parse_qs
 from random import randrange
