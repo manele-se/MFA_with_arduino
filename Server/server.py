@@ -9,11 +9,10 @@ from bleak import BleakScanner, BleakClient
 import threading
 from hashlib import sha256
 
-#Move these inside the class
 hostName = "localhost"
 serverPort = 8080
 address="A4:06:E9:79:ED:16"
-mutex= threading.Semaphore(0)
+sema= threading.Semaphore(0)
 id= 0x5b
 vcode=None 
 stop=True
@@ -30,13 +29,11 @@ CUSTOM_DATA_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
 class BluetoothClient:
     async def send_signal(self,ble):
         global vcode, stop
-        print("send signal")
         if stop:
             vcode=0
         else:
             vcode = self.random_number()
         # send code to bluetooth
-        print(vcode)
         await ble.write_gatt_char(CUSTOM_DATA_UUID, bytes([id, vcode, (id ^ vcode)]))
 
     def random_number(self):
@@ -46,9 +43,7 @@ class BluetoothClient:
     async def bluetooth_main(self,address):
         async with BleakClient(address) as client:
             while True:
-                print("före acquire i bloothoth main")
-                mutex.acquire()
-                print("efter acquire i bloothooth main")
+                sema.acquire()
                 await self.send_signal(client)
               
 
@@ -97,7 +92,7 @@ class MyServer(BaseHTTPRequestHandler):
         global stop
         self.http_response("./Client/MFA.html")
         stop=False
-        mutex.release()
+        sema.release()
       
 
     def log_in (self,postvars):
@@ -121,14 +116,13 @@ class MyServer(BaseHTTPRequestHandler):
     def check_verification_code(self, postvars):
         global stop
         if bytes('code', encoding='utf8')in postvars and not bytes('new_code', encoding='utf8')in postvars:
-            print( stop)
             code = postvars[bytes('code', encoding='utf8')]
             code = code[0].decode("utf-8")
             if code == str(vcode):
                 self.http_response("./Client/welcome.html")
                 #stop blinking
                 stop= True
-                mutex.release()
+                sema.release()
 
             else: 
                 self.http_response("./Client/MFA failed.html")
@@ -171,8 +165,7 @@ class MyServer(BaseHTTPRequestHandler):
             pass
 
         webServer.server_close()
-        print("Server stopped.")
-        mutex.release()
+        sema.release()
 
 
             
@@ -181,11 +174,8 @@ bluetooth= BluetoothClient()
 asyncio.run(bluetooth.bluetooth_main(address))
 
 
-## TODO: send signal when verifyed to stop blicking 
-## Check timing 
+
+
 ## TODO: write fuzz test 
-
-
-## Code från arduino now is 4 bits but the idea is to attack a screen which shows a code , think how this can be made more general. 
 ## the test should include a brute force against the code. 
 

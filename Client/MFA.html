@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
+    <script src="script.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css">
     <title>Form</title>
@@ -15,24 +16,20 @@
             <h2 id="title"></h2>
             <h3 id="timer"></h3>
             <h4 id="extra-info">Please check your board and insert the code</h4>
-       
-       
         
             <div class="form-control" id="code-mfa">
                 <input type="code" id="code" name="code" placeholder="Enter MFA code">
                 <!--display an error message at the specific place-->
                 <small>Error</small>
-                
             </div>
             
             <div id="buttons">
                 <button id="new-code-button" name="new_code" type="submit">New code</button>
                 <button type="submit" id="verify-button">Verify </button>
             </div>
-            
         </form>
     </div>
-    <script src="script.js"></script>
+   
 </body>
 
 </html>

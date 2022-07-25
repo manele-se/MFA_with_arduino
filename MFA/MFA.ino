@@ -50,27 +50,17 @@ void loop() {
   readOneByte(); 
   if (packetReceived){
       if (done == 0) {
+        
         char id = protocolData[index]; 
         char code = protocolData[(index+1)%3];
+        if(code)delay(3500);
          //empty buffer
         for(int i = 0; i< 3; i++){
         protocolData[i]=0;
        }
-        
-        //delay(3500);
         blink_binary(code);
         int newCode = false; 
-      
-       /* while(!newCode){
-          readOneByte();
-          if (packetReceived)
-           newCode= true; 
-        }^*/
-        
- 
-      
-       
-       
+           
         }
     }
   }
